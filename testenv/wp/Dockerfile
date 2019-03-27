@@ -6,6 +6,7 @@ RUN apt-get -y install wget unzip
 
 # WP プラグイン (zip) ダウンロード
 WORKDIR /tmp/wp-plugins
+RUN wget --no-check-certificate https://downloads.wordpress.org/plugin/classic-editor.1.4.zip
 RUN wget --no-check-certificate https://downloads.wordpress.org/plugin/syntaxhighlighter.zip
 RUN wget --no-check-certificate https://downloads.wordpress.org/plugin/wp-lightbox-2.zip
 # Zip ファイルを解凍してインストール
