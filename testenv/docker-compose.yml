@@ -1,13 +1,18 @@
 version: '3.3'
 
 # https://docs.docker.com/compose/wordpress/
+# http://docs.docker.jp/compose/wordpress.html
 # docker-compose up -d
 # then access http://localhost:8000
+#             user: hugo pw:hugo
+# export setting
+# docker exec -it testenv_db_1 sh -c 'mysqldump wordpress -u wordpress -pwordpress 2> /dev/null' > mysql.dump.sql
 services:
    db:
      image: mysql:5.7
      volumes:
-       - db_data:/var/lib/mysql
+       - ./.data/db:/var/lib/mysql
+       - ./mysql.dump.sql:/docker-entrypoint-initdb.d/install_wordpress.sql
      restart: always
      environment:
        MYSQL_ROOT_PASSWORD: somewordpress
@@ -18,15 +23,15 @@ services:
    wordpress:
      depends_on:
        - db
-     image: wordpress:latest
+     build: ./wp
      ports:
        - "8000:80"
      restart: always
+     volumes:
+       - ../:/usr/src/wordpress/wp-content/plugins/hugo-export/
      environment:
        WORDPRESS_DB_HOST: db:3306
        WORDPRESS_DB_USER: wordpress
        WORDPRESS_DB_PASSWORD: wordpress
        WORDPRESS_DB_NAME: wordpress
-volumes:
-    db_data: {}
 
