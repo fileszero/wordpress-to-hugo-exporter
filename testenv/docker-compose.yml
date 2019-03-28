@@ -30,6 +30,7 @@ services:
      volumes:
        - ../:/var/www/html/wp-content/plugins/hugo-export/
        - ./uploads:/var/www/html/wp-content/uploads/
+       - ./tmp/:/tmp/
      environment:
        WORDPRESS_DB_HOST: db:3306
        WORDPRESS_DB_USER: wordpress

@@ -146,7 +146,7 @@ class Converter
      * @var array<string>
      */
     protected $drop = array(
-        'script',
+        // 'script',
         'head',
         'style',
         'form',
@@ -314,7 +314,7 @@ class Converter
      * @return void
      */
     protected function parse()
-    { 
+    {
         $this->output = '';
         // drop tags
         $this->parser->html = preg_replace('#<(' . implode('|', $this->drop) . ')[^>]*>.*</\\1>#sU', '', $this->parser->html);
@@ -364,9 +364,9 @@ class Converter
                     if ($this->isMarkdownable()) {
                         if ($this->parser->isBlockElement && $this->parser->isStartTag && !$this->lastWasBlockTag && !empty($this->output)) {
                             if (!empty($this->buffer)) {
-                                $str =& $this->buffer[count($this->buffer) - 1];
+                                $str = &$this->buffer[count($this->buffer) - 1];
                             } else {
-                                $str =& $this->output;
+                                $str = &$this->output;
                             }
                             if (substr($str, -strlen($this->indent) - 1) != "\n" . $this->indent) {
                                 $str .= "\n" . $this->indent;
@@ -825,8 +825,8 @@ class Converter
 
         return '[' . $buffer . '][' . $tag['linkID'] . ']';
     }
-	
-	/**
+
+    /**
      * handle <iframe> tags
      *
      * @param void
@@ -839,14 +839,14 @@ class Converter
             $this->handleTag_iframe_parser();
             $this->stack();
         } else {
-        	$tag = $this->unstack();
-        	$buffer = $this->unbuffer();
-        	$this->handleTag_iframe_converter($tag, $buffer);
-        	$this->out($this->handleTag_iframe_converter($tag, $buffer), true);
+            $tag = $this->unstack();
+            $buffer = $this->unbuffer();
+            $this->handleTag_iframe_converter($tag, $buffer);
+            $this->out($this->handleTag_iframe_converter($tag, $buffer), true);
         }
     }
-	
-	/**
+
+    /**
      * handle <iframe> tags parsing them if possible as video template for hugo
      *
      * @param void
@@ -857,26 +857,26 @@ class Converter
 
         $iframeLink = $this->decode(trim($this->parser->tagAttributes['src']));
         $sourceType = null;
-        
+
         if (strpos($iframeLink, 'youtube') !== false) {
-        	$sourceType = "youtube";
-        }
-        
-        if (strpos($iframeLink, 'vimeo') !== false) {
-        	$sourceType = "vimeo";
+            $sourceType = "youtube";
         }
 
-        $replaceArray = array("https://www.youtube.com/embed/","http://www.youtube.com/embed/","?feature=oembed");
-        $transformedLink = str_replace($replaceArray,"", $iframeLink);
-		
-		if (strpos($transformedLink, 'vimeo.com') !== false) {
-			$transformedLink = trim(substr($transformedLink, strrpos($transformedLink, '/') + 1));
-		}
-        
-        if (strpos($transformedLink, 'http') === false) {
-        	$transformedLink = "{{< $sourceType $transformedLink >}}";
+        if (strpos($iframeLink, 'vimeo') !== false) {
+            $sourceType = "vimeo";
         }
-		
+
+        $replaceArray = array("https://www.youtube.com/embed/", "http://www.youtube.com/embed/", "?feature=oembed");
+        $transformedLink = str_replace($replaceArray, "", $iframeLink);
+
+        if (strpos($transformedLink, 'vimeo.com') !== false) {
+            $transformedLink = trim(substr($transformedLink, strrpos($transformedLink, '/') + 1));
+        }
+
+        if (strpos($transformedLink, 'http') === false) {
+            $transformedLink = "{{< $sourceType $transformedLink >}}";
+        }
+
         $this->parser->tagAttributes['src'] = $this->decode(trim($this->parser->tagAttributes['src']));
     }
 
@@ -889,31 +889,31 @@ class Converter
      * @return string The markdownified link from the iframe
      */
     protected function handleTag_iframe_converter($tag, $buffer)
-    { 
-		$sourceType = null;
-        
-		$link = $tag['src'];
-		
+    {
+        $sourceType = null;
+
+        $link = $tag['src'];
+
         if (strpos($link, 'youtube') !== false) {
-        	$sourceType = "youtube";
-        }
-        
-        if (strpos($link, 'vimeo') !== false) {
-        	$sourceType = "vimeo";
+            $sourceType = "youtube";
         }
 
-        $replaceArray = array("https://www.youtube.com/embed/","http://www.youtube.com/embed/","?feature=oembed");
-        $transformedLink = str_replace($replaceArray,"", $link);
-		
-		if (strpos($transformedLink, 'vimeo.com') !== false) {
-			$transformedLink = trim(substr($transformedLink, strrpos($transformedLink, '/') + 1));
-		}
+        if (strpos($link, 'vimeo') !== false) {
+            $sourceType = "vimeo";
+        }
+
+        $replaceArray = array("https://www.youtube.com/embed/", "http://www.youtube.com/embed/", "?feature=oembed");
+        $transformedLink = str_replace($replaceArray, "", $link);
+
+        if (strpos($transformedLink, 'vimeo.com') !== false) {
+            $transformedLink = trim(substr($transformedLink, strrpos($transformedLink, '/') + 1));
+        }
 
         if (strpos($transformedLink, 'http') === false) {
-        	return $transformedLink = "{{< $sourceType $transformedLink >}}";
+            return $transformedLink = "{{< $sourceType $transformedLink >}}";
         } else {
-			return "[$transformedLink]";
-		}
+            return "[$transformedLink]";
+        }
     }
 
     /**
@@ -967,7 +967,8 @@ class Converter
         $link_id = false;
         if (!empty($this->footnotes)) {
             foreach ($this->footnotes as $tag) {
-                if ($tag['href'] == $this->parser->tagAttributes['src']
+                if (
+                    $tag['href'] == $this->parser->tagAttributes['src']
                     && $tag['title'] === $this->parser->tagAttributes['title']
                 ) {
                     $link_id = $tag['linkID'];
@@ -1108,7 +1109,7 @@ class Converter
     protected function handleTag_li()
     {
         if ($this->parent() == 'ol') {
-            $parent =& $this->getStacked('ol');
+            $parent = &$this->getStacked('ol');
             if ($this->parser->isStartTag) {
                 $parent['num']++;
                 $this->out(str_repeat(' ', 3 - strlen($parent['num'])) . $parent['num'] . '. ', true);
@@ -1461,9 +1462,9 @@ class Converter
             }
         } else {
             if (!empty($this->buffer)) {
-                $str =& $this->buffer[count($this->buffer) - 1];
+                $str = &$this->buffer[count($this->buffer) - 1];
             } else {
-                $str =& $this->output;
+                $str = &$this->output;
             }
 
             // move spaces before the end element to after the element
