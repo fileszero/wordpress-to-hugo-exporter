@@ -20,3 +20,5 @@ RUN rm -rf /tmp/*
 RUN chown -R www-data:www-data /usr/src/wordpress/wp-content
 
 WORKDIR /var/www/html
+COPY wp-config.php /var/www/html/
+RUN chown www-data:www-data /var/www/html/wp-config.php
