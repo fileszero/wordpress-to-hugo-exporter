@@ -1,5 +1,9 @@
 FROM wordpress:latest
 
+# internal FW settings
+COPY mycerts.crt /usr/local/share/ca-certificates/
+RUN update-ca-certificates
+
 # 必要なツール郡をインストール
 RUN apt-get update
 RUN apt-get -y install wget unzip
@@ -19,6 +23,8 @@ RUN rm -rf /tmp/*
 # サーバが読めるように wp-content 以下の所有者を変更
 RUN chown -R www-data:www-data /usr/src/wordpress/wp-content
 
+# wordpress 環境定義上書き
 WORKDIR /var/www/html
 COPY wp-config.php /var/www/html/
 RUN chown www-data:www-data /var/www/html/wp-config.php
+

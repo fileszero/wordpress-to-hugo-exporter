@@ -1,3 +1,4 @@
 wp-hugo-*
 testenv/.data/*
 /testenv/tmp/
+/testenv/wp/mycerts.crt
