@@ -173,13 +173,13 @@ class Hugo_Export
                 return true;
             }
             return false;
-//            $isEmpty=true;
-//            foreach($value as $k=>$v){
-//                if(true === empty($v)){
-//                    $isEmpty
-//                }
-//            }
-//            return $isEmpty;
+            //            $isEmpty=true;
+            //            foreach($value as $k=>$v){
+            //                if(true === empty($v)){
+            //                    $isEmpty
+            //                }
+            //            }
+            //            return $isEmpty;
         }
         return true === empty($value);
     }
@@ -324,6 +324,7 @@ class Hugo_Export
         WP_Filesystem();
 
         $this->dir = $this->getTempDir() . 'wp-hugo-' . md5(time()) . '/';
+        // $this->dir = $this->getTempDir() . 'wp-hugo-debug/';
         $this->zip = $this->getTempDir() . 'wp-hugo.zip';
         $wp_filesystem->mkdir($this->dir);
         $wp_filesystem->mkdir($this->dir . $this->post_folder);

@@ -18,7 +18,7 @@ RUN apt-get update \
 # SETUP XDebug
 RUN pecl install xdebug \
     && docker-php-ext-enable xdebug
-COPY xdebug.ini /usr/local/etc/php/conf.d/
+# COPY xdebug.ini /usr/local/etc/php/conf.d/
 
 
 # WP プラグイン (zip) ダウンロード --no-check-certificate
