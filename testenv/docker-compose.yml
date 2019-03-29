@@ -26,11 +26,12 @@ services:
      build: ./wp
      ports:
        - "8000:80"
+       - "9000:9000"  # XDebug
      restart: always
      volumes:
        - ../:/var/www/html/wp-content/plugins/hugo-export/
        - ./uploads:/var/www/html/wp-content/uploads/
-       - ./tmp/:/tmp/
+       # - ./tmp/:/tmp/
      environment:
        WORDPRESS_DB_HOST: db:3306
        WORDPRESS_DB_USER: wordpress

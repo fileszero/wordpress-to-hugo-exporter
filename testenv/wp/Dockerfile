@@ -4,15 +4,28 @@ FROM wordpress:latest
 COPY mycerts.crt /usr/local/share/ca-certificates/
 RUN update-ca-certificates
 
-# 必要なツール郡をインストール
-RUN apt-get update
-RUN apt-get -y install wget unzip
+## PHP ERROR!! routines:tls_process_server_certificate:certificate verify failed
+## php -r 'print_r(openssl_get_cert_locations());'
+## php -a
+## file_get_contents("https://downloads.wordpress.org/plugin/classic-editor.1.4.zip");
+RUN curl https://curl.haxx.se/ca/cacert.pem > /usr/lib/ssl/cert.pem \
+    && cat /usr/local/share/ca-certificates/mycerts.crt >> /usr/lib/ssl/cert.pem
 
-# WP プラグイン (zip) ダウンロード
+# 必要なツール郡をインストール
+RUN apt-get update \
+    && apt-get -y install wget unzip
+
+# SETUP XDebug
+RUN pecl install xdebug \
+    && docker-php-ext-enable xdebug
+COPY xdebug.ini /usr/local/etc/php/conf.d/
+
+
+# WP プラグイン (zip) ダウンロード --no-check-certificate
 WORKDIR /tmp/wp-plugins
-RUN wget --no-check-certificate https://downloads.wordpress.org/plugin/classic-editor.1.4.zip
-RUN wget --no-check-certificate https://downloads.wordpress.org/plugin/syntaxhighlighter.zip
-RUN wget --no-check-certificate https://downloads.wordpress.org/plugin/wp-lightbox-2.zip
+RUN wget https://downloads.wordpress.org/plugin/classic-editor.1.4.zip
+RUN wget https://downloads.wordpress.org/plugin/syntaxhighlighter.zip
+RUN wget https://downloads.wordpress.org/plugin/wp-lightbox-2.zip
 # Zip ファイルを解凍してインストール
 RUN unzip './*.zip' -d /usr/src/wordpress/wp-content/plugins
 
