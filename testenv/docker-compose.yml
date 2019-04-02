@@ -26,13 +26,14 @@ services:
      build: ./wp
      ports:
        - "8000:80"
-       - "9000:9000"  # XDebug
+      #  - "9001:9001"  # XDebug # あると動かないっぽい
      restart: always
      volumes:
-       - /wp/xdebug.ini:/usr/local/etc/php/conf.d/xdebug.ini
+       - ./wp/xdebug.ini:/usr/local/etc/php/conf.d/xdebug.ini
        - ../:/var/www/html/wp-content/plugins/hugo-export/
        - ./uploads:/var/www/html/wp-content/uploads/
-       # - ./tmp/:/tmp/
+       - ./src:/var/www/html/test/
+       - ./tmp/:/tmp/
      environment:
        WORDPRESS_DB_HOST: db:3306
        WORDPRESS_DB_USER: wordpress

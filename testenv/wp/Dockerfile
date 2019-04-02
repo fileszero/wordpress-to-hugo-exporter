@@ -39,5 +39,6 @@ RUN chown -R www-data:www-data /usr/src/wordpress/wp-content
 # wordpress 環境定義上書き
 WORKDIR /var/www/html
 COPY wp-config.php /var/www/html/
-RUN chown www-data:www-data /var/www/html/wp-config.php
+RUN chown www-data:www-data /var/www/html/wp-config.php \
+    && chown -R www-data:www-data wp-content/
 
