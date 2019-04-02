@@ -324,7 +324,9 @@ class Hugo_Export
         WP_Filesystem();
 
         $this->dir = $this->getTempDir() . 'wp-hugo-' . md5(time()) . '/';
-        // $this->dir = $this->getTempDir() . 'wp-hugo-debug/';
+        if (WP_DEBUG) {
+            $this->dir = $this->getTempDir() . 'wp-hugo-debug/';
+        }
         $this->zip = $this->getTempDir() . 'wp-hugo.zip';
         $wp_filesystem->mkdir($this->dir);
         $wp_filesystem->mkdir($this->dir . $this->post_folder);
@@ -335,7 +337,9 @@ class Hugo_Export
         $this->convert_uploads();
         $this->zip();
         $this->send();
-        $this->cleanup();
+        if (!WP_DEBUG) {
+            $this->cleanup();
+        }
     }
 
     /**
