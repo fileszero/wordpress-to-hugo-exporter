@@ -326,6 +326,7 @@ class Hugo_Export
         $this->dir = $this->getTempDir() . 'wp-hugo-' . md5(time()) . '/';
         if (WP_DEBUG) {
             $this->dir = $this->getTempDir() . 'wp-hugo-debug/';
+            $wp_filesystem->rmdir($this->dir, true);
         }
         $this->zip = $this->getTempDir() . 'wp-hugo.zip';
         $wp_filesystem->mkdir($this->dir);

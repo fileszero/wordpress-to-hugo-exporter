@@ -231,6 +231,7 @@ class Converter
      */
     protected $indent = '';
 
+    protected $isCodeBlock = false;
     /**
      * constructor, set options, setup parser
      *
@@ -537,7 +538,12 @@ class Converter
                     }
                     // don't indent inside <pre> tags
                     if ($this->parser->tagName == 'pre') {
-                        $this->out($this->parser->node);
+                        if (preg_match('/class="brush: ([a-zA-Z]*)/', $this->parser->node, $matches)) {
+                            $this->out("```" . $matches[1] . "\n");
+                            $this->isCodeBlock = true;
+                        } else {
+                            $this->out($this->parser->node);
+                        }
                         static $indent;
                         $indent = $this->indent;
                         $this->indent = '';
@@ -551,7 +557,7 @@ class Converter
                         $this->parser->html = ltrim($this->parser->html);
                     }
                 } else {
-                    if (!$this->parser->keepWhitespace) {
+                    if (!$this->parser->keepWhitespace && !$this->isCodeBlock) {
                         $this->output = rtrim($this->output);
                     }
                     if ($this->parser->tagName != 'pre') {
@@ -559,7 +565,12 @@ class Converter
                         $this->out("\n" . $this->indent . $this->parser->node);
                     } else {
                         // reset indentation
-                        $this->out($this->parser->node);
+                        if ($this->isCodeBlock) {
+                            $this->out("```\n");
+                            $this->isCodeBlock = false;
+                        } else {
+                            $this->out($this->parser->node);
+                        }
                         static $indent;
                         $this->indent = $indent;
                     }
