@@ -9,7 +9,7 @@
             "type": "php",
             "request": "launch",
             "port": 9001,
-            "log": true,
+            // "log": true,
             "pathMappings": {
                 // {docker上のdocument root}:{ローカルのdocument root}
                 "/var/www/html/test": "${workspaceFolder}/testenv/src",
