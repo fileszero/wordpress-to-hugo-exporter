@@ -222,10 +222,11 @@ class Hugo_Export
     /**
      * Convert the main post content to Markdown.
      */
-    function convert_content($post)
+    function convert_content($post, $resource_reg)
     {
         $content = apply_filters('the_content', $post->post_content);
         $converter = new Markdownify\ConverterExtra;
+        $converter->resource_reg = $resource_reg;
         $markdown = $converter->parseString($content);
 
         if (false !== strpos($markdown, '[]: ')) {
@@ -307,7 +308,7 @@ class Hugo_Export
             $output = Spyc::YAMLDump($post->meta, false, 0);
 
             $output .= "\n---\n";
-            $output .= $this->convert_content($post);
+            $output .= $this->convert_content($post, $resource_reg);
             if ($this->include_comments) {
                 $output .= $this->convert_comments($post);
             }

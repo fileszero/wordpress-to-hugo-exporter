@@ -232,6 +232,8 @@ class Converter
     protected $indent = '';
 
     protected $isCodeBlock = false;
+    public $resource_reg = '';
+    protected $isLuminous = false;
     /**
      * constructor, set options, setup parser
      *
@@ -336,6 +338,9 @@ class Converter
                     $this->handleText();
                     break;
                 case 'tag':
+                    if ($this->parser->tagName == 'a') {
+                        $a = 1;   //debug
+                    }
                     if (in_array($this->parser->tagName, $this->ignore)) {
                         break;
                     }
@@ -528,7 +533,20 @@ class Converter
                     }
                 }
             }
-
+            if ($this->parser->tagName == 'a') {
+                if (preg_match($this->resource_reg, $this->parser->node, $matches)) {
+                    // Luminous
+                    $this->out('{{< luminous src="' . basename($matches[2]) . '" cmd="Resize" size="240x">}}');
+                    $this->isLuminous = true;
+                }
+                if (!$this->parser->isStartTag && $this->isLuminous) {
+                    $this->isLuminous = false;
+                    return;
+                }
+            }
+            if ($this->isLuminous) {
+                return;
+            }
             if ($this->parser->isBlockElement) {
                 if ($this->parser->isStartTag) {
                     // looks like ins or del are block elements now
