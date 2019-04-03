@@ -295,6 +295,11 @@ class Hugo_Export
             if ($this->include_comments) {
                 $output .= $this->convert_comments($post);
             }
+            // replace post link
+            foreach ($posts as $linkto) {
+                $output = str_replace($linkto->permalink, $linkto->output_folder, $output);
+            }
+
             $this->write($output, $post);
         }
     }
