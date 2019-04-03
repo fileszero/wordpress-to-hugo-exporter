@@ -111,7 +111,11 @@ class Hugo_Export
     {
         // Dates in the m/d/y or d-m-y formats are disambiguated by looking at the separator between the various components: if the separator is a slash (/),
         // then the American m/d/y is assumed; whereas if the separator is a dash (-) or a dot (.), then the European d-m-y format is assumed.
-        $unixTime = strtotime($post->post_date_gmt);
+        if (strpos($post->post_date_gmt, "0") === 0) {
+            $unixTime = strtotime($post->post_date);
+        } else {
+            $unixTime = strtotime($post->post_date_gmt);
+        }
         return date('c', $unixTime);
     }
 
@@ -258,6 +262,14 @@ class Hugo_Export
         return $output;
     }
 
+    function mkdir($folder)
+    {
+        global $wp_filesystem;
+        if (!$wp_filesystem->is_dir($folder)) {
+            /* directory didn't exist, so let's create it */
+            $wp_filesystem->mkdir($folder);
+        }
+    }
     /**
      * Loop through and convert all posts to MD files with YAML headers
      */
@@ -285,6 +297,10 @@ class Hugo_Export
             $post->meta = $meta;
             $posts[] = $post;
         }
+
+        global $wp_filesystem;
+        $upload_dir = wp_upload_dir();
+        $resource_reg = '#["\'](' . $upload_dir['baseurl'] . '(.*?))["\']#';
         // convert
         foreach ($posts as $post) {
             // Hugo doesn't like word-wrapped permalinks
@@ -297,7 +313,18 @@ class Hugo_Export
             }
             // replace post link
             foreach ($posts as $linkto) {
-                $output = str_replace($linkto->permalink, $linkto->output_folder, $output);
+                $output = str_replace($linkto->permalink, '/' . $linkto->output_folder, $output);
+            }
+            // media link
+            while (preg_match($resource_reg, $output, $matches)) {
+                // Simple copy for a file
+                $media_file = $upload_dir['basedir'] . $matches[2];
+                $dest_file = $this->dir . $post->output_folder . '/' . basename($media_file);
+                if (is_file($media_file) && !is_file($dest_file)) {
+                    $this->mkdir($this->dir . $post->output_folder);
+                    $wp_filesystem->copy($media_file, $dest_file);
+                    $output = str_replace($matches[1], basename($media_file), $output);
+                }
             }
 
             $this->write($output, $post);
@@ -412,7 +439,7 @@ class Hugo_Export
             $wp_filesystem->mkdir(urldecode($this->dir . $post->post_name));
             $filename = urldecode($post->post_name . '/index.md');
         } else {
-            $wp_filesystem->mkdir($this->dir . $post->output_folder);
+            $this->mkdir($this->dir . $post->output_folder);
             $filename = $post->output_folder . '/index.md';
         }
 
