@@ -536,7 +536,7 @@ class Converter
             if ($this->parser->tagName == 'a') {
                 if (preg_match($this->resource_reg, $this->parser->node, $matches)) {
                     // Luminous
-                    $this->out('{{< luminous src="' . basename($matches[2]) . '" cmd="Resize" size="240x">}}');
+                    $this->out('{{< luminous src="' . $matches[1] . '" cmd="Resize" size="240x">}}');
                     $this->isLuminous = true;
                 }
                 if (!$this->parser->isStartTag && $this->isLuminous) {

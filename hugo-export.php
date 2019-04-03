@@ -271,6 +271,15 @@ class Hugo_Export
             $wp_filesystem->mkdir($folder);
         }
     }
+    function copyToPageResource(WP_Post $post, $media_file)
+    {
+        global $wp_filesystem;
+        $dest_file = $this->dir . $post->output_folder . '/' . basename($media_file);
+        if (is_file($media_file) && !is_file($dest_file)) {
+            $this->mkdir($this->dir . $post->output_folder);
+            $wp_filesystem->copy($media_file, $dest_file);
+        }
+    }
     /**
      * Loop through and convert all posts to MD files with YAML headers
      */
@@ -304,6 +313,12 @@ class Hugo_Export
         $resource_reg = '#["\'](' . $upload_dir['baseurl'] . '(.*?))["\']#';
         // convert
         foreach ($posts as $post) {
+            // featured_image
+            if (!empty($post->meta['featured_image'])) {
+                $media_file = str_replace($upload_dir['baseurl'], $upload_dir['basedir'], get_the_post_thumbnail_url($post));
+                $this->copyToPageResource($post, $media_file);
+                $post->meta['featured_image'] = basename($media_file);
+            }
             // Hugo doesn't like word-wrapped permalinks
             $output = Spyc::YAMLDump($post->meta, false, 0);
 
@@ -320,12 +335,8 @@ class Hugo_Export
             while (preg_match($resource_reg, $output, $matches)) {
                 // Simple copy for a file
                 $media_file = $upload_dir['basedir'] . $matches[2];
-                $dest_file = $this->dir . $post->output_folder . '/' . basename($media_file);
-                if (is_file($media_file) && !is_file($dest_file)) {
-                    $this->mkdir($this->dir . $post->output_folder);
-                    $wp_filesystem->copy($media_file, $dest_file);
-                    $output = str_replace($matches[1], basename($media_file), $output);
-                }
+                $this->copyToPageResource($post, $media_file);
+                $output = str_replace($matches[1], basename($media_file), $output);
             }
 
             $this->write($output, $post);
