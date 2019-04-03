@@ -143,7 +143,7 @@ class Hugo_Export
 
         //turns permalink into 'url' format, since Hugo supports redirection on per-post basis
         if ('page' !== $post->post_type) {
-            $output['url'] = urldecode(str_replace(home_url(), '', get_permalink($post)));
+            //$output['url'] = urldecode(str_replace(home_url(), '', get_permalink($post)));
         }
 
         // check if the post or page has a Featured Image assigned to it.
@@ -264,20 +264,31 @@ class Hugo_Export
     function convert_posts()
     {
         global $post;
-
+        // make post data set
+        $posts = array();
         foreach ($this->get_posts() as $postID) {
             $post = get_post($postID);
             setup_postdata($post);
-            $meta = array_merge($this->convert_meta($post), $this->convert_terms($postID));
+            //
+            // custom attributes
+            $post->permalink = get_permalink($postID);
+            // new folder name
+            $post->output_folder = $this->post_folder . date('Y-m-d', strtotime($post->post_date)) . '-' . urldecode($post->post_name);
+
+            $meta = array_merge($this->convert_meta($post), $this->convert_terms($post->ID));
             // remove falsy values, which just add clutter
             foreach ($meta as $key => $value) {
                 if (!is_numeric($value) && !$value) {
                     unset($meta[$key]);
                 }
             }
-
+            $post->meta = $meta;
+            $posts[] = $post;
+        }
+        // convert
+        foreach ($posts as $post) {
             // Hugo doesn't like word-wrapped permalinks
-            $output = Spyc::YAMLDump($meta, false, 0);
+            $output = Spyc::YAMLDump($post->meta, false, 0);
 
             $output .= "\n---\n";
             $output .= $this->convert_content($post);
@@ -396,7 +407,8 @@ class Hugo_Export
             $wp_filesystem->mkdir(urldecode($this->dir . $post->post_name));
             $filename = urldecode($post->post_name . '/index.md');
         } else {
-            $filename = $this->post_folder . date('Y-m-d', strtotime($post->post_date)) . '-' . urldecode($post->post_name) . '.md';
+            $wp_filesystem->mkdir($this->dir . $post->output_folder);
+            $filename = $post->output_folder . '/index.md';
         }
 
         $wp_filesystem->put_contents($this->dir . $filename, $output);
