@@ -338,7 +338,7 @@ class Converter
                     $this->handleText();
                     break;
                 case 'tag':
-                    if ($this->parser->tagName == 'a') {
+                    if ($this->parser->tagName == 'iframe') {
                         $a = 1;   //debug
                     }
                     if (in_array($this->parser->tagName, $this->ignore)) {
@@ -824,6 +824,11 @@ class Converter
             return '<' . $buffer . '>';
         }
 
+        // amazon link
+        if (preg_match('#http://[a-z]+\.amazon\.[a-z\.]+/gp/product/([a-zA-Z0-9]+)/#', $tag['href'], $matches)) {
+            return "{{< amazon  $matches[1] >}}";
+        }
+
         $bufferDecoded = $this->decode(trim($buffer));
         if (substr($tag['href'], 0, 7) == 'mailto:' && 'mailto:' . $bufferDecoded == $tag['href']) {
             if (is_null($tag['title'])) {
@@ -895,6 +900,10 @@ class Converter
             $sourceType = "vimeo";
         }
 
+        if (strpos($iframeLink, 'amazon-adsystem') !== false) {
+            $sourceType = "amazon";
+        }
+
         $replaceArray = array("https://www.youtube.com/embed/", "http://www.youtube.com/embed/", "?feature=oembed");
         $transformedLink = str_replace($replaceArray, "", $iframeLink);
 
@@ -930,7 +939,15 @@ class Converter
         if (strpos($link, 'vimeo') !== false) {
             $sourceType = "vimeo";
         }
+        if (strpos($link, 'amazon-adsystem') !== false) {
+            $sourceType = "amazon";
+        }
 
+        if ($sourceType == "amazon") {
+            if (preg_match('#asins=([a-zA-Z0-9]*)#', $link, $matches)) {
+                return "{{< $sourceType  $matches[1] >}}";
+            }
+        }
         $replaceArray = array("https://www.youtube.com/embed/", "http://www.youtube.com/embed/", "?feature=oembed");
         $transformedLink = str_replace($replaceArray, "", $link);
 
