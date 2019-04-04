@@ -30,6 +30,7 @@ services:
      restart: always
      volumes:
        - ./wp/xdebug.ini:/usr/local/etc/php/conf.d/xdebug.ini
+       - ./wp/uploadsize.ini:/usr/local/etc/php/conf.d/uploadsize.ini
        - ./src:/var/www/html/test/
        - ./tmp/:/tmp/
        - ../:/var/www/html/wp-content/plugins/hugo-export/
