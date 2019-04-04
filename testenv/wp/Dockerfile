@@ -26,6 +26,7 @@ WORKDIR /tmp/wp-plugins
 RUN wget https://downloads.wordpress.org/plugin/classic-editor.1.4.zip
 RUN wget https://downloads.wordpress.org/plugin/syntaxhighlighter.zip
 RUN wget https://downloads.wordpress.org/plugin/wp-lightbox-2.zip
+RUN wget https://downloads.wordpress.org/plugin/all-in-one-wp-migration.6.89.zip
 # Zip ファイルを解凍してインストール
 RUN unzip './*.zip' -d /usr/src/wordpress/wp-content/plugins
 
