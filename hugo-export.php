@@ -224,7 +224,11 @@ class Hugo_Export
      */
     function convert_content($post, $resource_reg)
     {
-        $content = apply_filters('the_content', $post->post_content);
+        $content = $post->post_content;
+        // amazon plugin
+        $content = preg_replace('#\[amazon_link[^\]]*asins=["\']([a-zA-Z0-9]+)["\'][^\]]*\]#sU', '{{< amazon $1 >}}', $content);
+        $content = apply_filters('the_content', $content);
+
         $converter = new Markdownify\ConverterExtra;
         $converter->resource_reg = $resource_reg;
         $markdown = $converter->parseString($content);
@@ -391,9 +395,9 @@ class Hugo_Export
         $this->convert_options();
         $this->convert_posts();
         $this->convert_uploads();
-        $this->zip();
-        $this->send();
         if (!WP_DEBUG) {
+            $this->zip();
+            $this->send();
             $this->cleanup();
         }
     }
@@ -615,7 +619,7 @@ class Hugo_Export
      */
     public function setTempDir($tempDir)
     {
-        $this->_tempDir = $tempDir . (false === strpos($tempDir, DIRECTORY_SEPARATOR) ? DIRECTORY_SEPARATOR : '');
+        $this->_tempDir = $tempDir . (false === strpos($tempDir, DIRECTORY_SEPARATOR) ?DIRECTORY_SEPARATOR : '');
     }
 
     /**
