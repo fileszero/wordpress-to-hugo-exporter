@@ -272,7 +272,8 @@ class Hugo_Export
         global $wp_filesystem;
         if (!$wp_filesystem->is_dir($folder)) {
             /* directory didn't exist, so let's create it */
-            $wp_filesystem->mkdir($folder);
+            // $wp_filesystem->mkdir($folder);
+            mkdir($folder, 0777, true);
         }
     }
     function copyToPageResource(WP_Post $post, $media_file)
@@ -299,7 +300,7 @@ class Hugo_Export
             // custom attributes
             $post->permalink = get_permalink($postID);
             // new folder name
-            $post->output_folder = $this->post_folder . date('Y-m-d', strtotime($post->post_date)) . '-' . urldecode($post->post_name);
+            $post->output_folder = $this->post_folder . date('Y/m/d', strtotime($post->post_date)) . '/' . urldecode($post->post_name);
 
             $meta = array_merge($this->convert_meta($post), $this->convert_terms($post->ID));
             // remove falsy values, which just add clutter
@@ -308,6 +309,10 @@ class Hugo_Export
                     unset($meta[$key]);
                 }
             }
+            if (!empty($post->post_name)) {
+                $meta['slug'] = urldecode($post->post_name);
+            }
+
             $post->meta = $meta;
             $posts[] = $post;
         }
@@ -619,7 +624,7 @@ class Hugo_Export
      */
     public function setTempDir($tempDir)
     {
-        $this->_tempDir = $tempDir . (false === strpos($tempDir, DIRECTORY_SEPARATOR) ?DIRECTORY_SEPARATOR : '');
+        $this->_tempDir = $tempDir . (false === strpos($tempDir, DIRECTORY_SEPARATOR) ? DIRECTORY_SEPARATOR : '');
     }
 
     /**
