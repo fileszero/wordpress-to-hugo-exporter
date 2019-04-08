@@ -232,6 +232,8 @@ class Converter
     protected $indent = '';
 
     protected $isCodeBlock = false;
+    public $resource_reg = '';
+    protected $isLuminous = false;
     /**
      * constructor, set options, setup parser
      *
@@ -319,6 +321,7 @@ class Converter
         $this->output = '';
         // drop tags
         $this->parser->html = preg_replace('#<(' . implode('|', $this->drop) . ')[^>]*>.*</\\1>#sU', '', $this->parser->html);
+
         while ($this->parser->nextNode()) {
             switch ($this->parser->nodeType) {
                 case 'doctype':
@@ -336,6 +339,9 @@ class Converter
                     $this->handleText();
                     break;
                 case 'tag':
+                    if ($this->parser->tagName == 'iframe') {
+                        $a = 1;   //debug
+                    }
                     if (in_array($this->parser->tagName, $this->ignore)) {
                         break;
                     }
@@ -485,7 +491,7 @@ class Converter
      */
     protected function getLinkReference($tag)
     {
-        return $tag['href'] . (isset($tag['title']) ? ' "' . $tag['title'] . '"' : '');
+        return $tag['href'] . (isset($tag['title']) ?' "' . $tag['title'] . '"' : '');
     }
 
     /**
@@ -528,7 +534,20 @@ class Converter
                     }
                 }
             }
-
+            if ($this->parser->tagName == 'a') {
+                if (preg_match($this->resource_reg, $this->parser->node, $matches)) {
+                    // Luminous
+                    $this->out('{{< luminous src="' . $matches[1] . '" cmd="Resize" size="240x">}}');
+                    $this->isLuminous = true;
+                }
+                if (!$this->parser->isStartTag && $this->isLuminous) {
+                    $this->isLuminous = false;
+                    return;
+                }
+            }
+            if ($this->isLuminous) {
+                return;
+            }
             if ($this->parser->isBlockElement) {
                 if ($this->parser->isStartTag) {
                     // looks like ins or del are block elements now
@@ -611,7 +630,7 @@ class Converter
         if ($this->hasParent('pre') && strpos($this->parser->node, "\n") !== false) {
             $this->parser->node = str_replace("\n", "\n" . $this->indent, $this->parser->node);
         }
-        if (!$this->hasParent('code') && !$this->hasParent('pre')) {
+        if (!$this->hasParent('code') && !$this->hasParent('pre') && !$this->isCodeBlock) {
             // entity decode
             $this->parser->node = $this->decode($this->parser->node);
             if (!$this->skipConversion) {
@@ -619,7 +638,7 @@ class Converter
                 $this->parser->node = preg_replace($this->escapeInText['search'], $this->escapeInText['replace'], $this->parser->node);
             }
         } else {
-            $this->parser->node = str_replace(array('&quot;', '&apos'), array('"', '\''), $this->parser->node);
+            $this->parser->node = str_replace(array('&quot;', '&apos;', '&lt;', '&gt;', '&amp;'), array('"', '\'', '<', '>', '&'), $this->parser->node);
         }
         $this->out($this->parser->node);
         $this->lastClosedTag = '';
@@ -806,6 +825,11 @@ class Converter
             return '<' . $buffer . '>';
         }
 
+        // amazon link
+        if (preg_match('#http://[a-z]+\.amazon\.[a-z\.]+/gp/product/([a-zA-Z0-9]+)/#', $tag['href'], $matches)) {
+            return "{{< amazon  $matches[1] >}}";
+        }
+
         $bufferDecoded = $this->decode(trim($buffer));
         if (substr($tag['href'], 0, 7) == 'mailto:' && 'mailto:' . $bufferDecoded == $tag['href']) {
             if (is_null($tag['title'])) {
@@ -877,6 +901,10 @@ class Converter
             $sourceType = "vimeo";
         }
 
+        if (strpos($iframeLink, 'amazon-adsystem') !== false) {
+            $sourceType = "amazon";
+        }
+
         $replaceArray = array("https://www.youtube.com/embed/", "http://www.youtube.com/embed/", "?feature=oembed");
         $transformedLink = str_replace($replaceArray, "", $iframeLink);
 
@@ -894,7 +922,7 @@ class Converter
     /**
      * handle <iframe> tags conversion
      * The Hugo Generator should handle video links, by transforming them into iframes again
-	 *
+     *
      * @param array $tag
      * @param string $buffer
      * @return string The markdownified link from the iframe
@@ -912,7 +940,15 @@ class Converter
         if (strpos($link, 'vimeo') !== false) {
             $sourceType = "vimeo";
         }
+        if (strpos($link, 'amazon-adsystem') !== false) {
+            $sourceType = "amazon";
+        }
 
+        if ($sourceType == "amazon") {
+            if (preg_match('#asins=([a-zA-Z0-9]*)#', $link, $matches)) {
+                return "{{< $sourceType  $matches[1] >}}";
+            }
+        }
         $replaceArray = array("https://www.youtube.com/embed/", "http://www.youtube.com/embed/", "?feature=oembed");
         $transformedLink = str_replace($replaceArray, "", $link);
 

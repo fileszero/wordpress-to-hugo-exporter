@@ -111,7 +111,11 @@ class Hugo_Export
     {
         // Dates in the m/d/y or d-m-y formats are disambiguated by looking at the separator between the various components: if the separator is a slash (/),
         // then the American m/d/y is assumed; whereas if the separator is a dash (-) or a dot (.), then the European d-m-y format is assumed.
-        $unixTime = strtotime($post->post_date_gmt);
+        if (strpos($post->post_date_gmt, "0") === 0) {
+            $unixTime = strtotime($post->post_date);
+        } else {
+            $unixTime = strtotime($post->post_date_gmt);
+        }
         return date('c', $unixTime);
     }
 
@@ -143,7 +147,7 @@ class Hugo_Export
 
         //turns permalink into 'url' format, since Hugo supports redirection on per-post basis
         if ('page' !== $post->post_type) {
-            $output['url'] = urldecode(str_replace(home_url(), '', get_permalink($post)));
+            //$output['url'] = urldecode(str_replace(home_url(), '', get_permalink($post)));
         }
 
         // check if the post or page has a Featured Image assigned to it.
@@ -218,10 +222,15 @@ class Hugo_Export
     /**
      * Convert the main post content to Markdown.
      */
-    function convert_content($post)
+    function convert_content($post, $resource_reg)
     {
-        $content = apply_filters('the_content', $post->post_content);
+        $content = $post->post_content;
+        // amazon plugin
+        $content = preg_replace('#\[amazon_link[^\]]*asins=["\']([a-zA-Z0-9]+)["\'][^\]]*\]#sU', '{{< amazon $1 >}}', $content);
+        $content = apply_filters('the_content', $content);
+
         $converter = new Markdownify\ConverterExtra;
+        $converter->resource_reg = $resource_reg;
         $markdown = $converter->parseString($content);
 
         if (false !== strpos($markdown, '[]: ')) {
@@ -258,32 +267,87 @@ class Hugo_Export
         return $output;
     }
 
+    function mkdir($folder)
+    {
+        global $wp_filesystem;
+        if (!$wp_filesystem->is_dir($folder)) {
+            /* directory didn't exist, so let's create it */
+            // $wp_filesystem->mkdir($folder);
+            mkdir($folder, 0777, true);
+        }
+    }
+    function copyToPageResource(WP_Post $post, $media_file)
+    {
+        global $wp_filesystem;
+        $dest_file = $this->dir . $post->output_folder . '/' . basename($media_file);
+        if (is_file($media_file) && !is_file($dest_file)) {
+            $this->mkdir($this->dir . $post->output_folder);
+            $wp_filesystem->copy($media_file, $dest_file);
+        }
+    }
     /**
      * Loop through and convert all posts to MD files with YAML headers
      */
     function convert_posts()
     {
         global $post;
-
+        // make post data set
+        $posts = array();
         foreach ($this->get_posts() as $postID) {
             $post = get_post($postID);
             setup_postdata($post);
-            $meta = array_merge($this->convert_meta($post), $this->convert_terms($postID));
+            //
+            // custom attributes
+            $post->permalink = get_permalink($postID);
+            // new folder name
+            $post->output_folder = $this->post_folder . date('Y/m/d', strtotime($post->post_date)) . '/' . urldecode($post->post_name);
+
+            $meta = array_merge($this->convert_meta($post), $this->convert_terms($post->ID));
             // remove falsy values, which just add clutter
             foreach ($meta as $key => $value) {
                 if (!is_numeric($value) && !$value) {
                     unset($meta[$key]);
                 }
             }
+            if (!empty($post->post_name)) {
+                $meta['slug'] = urldecode($post->post_name);
+            }
 
+            $post->meta = $meta;
+            $posts[] = $post;
+        }
+
+        global $wp_filesystem;
+        $upload_dir = wp_upload_dir();
+        $resource_reg = '#["\'](' . $upload_dir['baseurl'] . '(.*?))["\']#';
+        // convert
+        foreach ($posts as $post) {
+            // featured_image
+            if (!empty($post->meta['featured_image'])) {
+                $media_file = str_replace($upload_dir['baseurl'], $upload_dir['basedir'], get_the_post_thumbnail_url($post));
+                $this->copyToPageResource($post, $media_file);
+                $post->meta['featured_image'] = basename($media_file);
+            }
             // Hugo doesn't like word-wrapped permalinks
-            $output = Spyc::YAMLDump($meta, false, 0);
+            $output = Spyc::YAMLDump($post->meta, false, 0);
 
             $output .= "\n---\n";
-            $output .= $this->convert_content($post);
+            $output .= $this->convert_content($post, $resource_reg);
             if ($this->include_comments) {
                 $output .= $this->convert_comments($post);
             }
+            // replace post link
+            foreach ($posts as $linkto) {
+                $output = str_replace($linkto->permalink, '/' . $linkto->output_folder, $output);
+            }
+            // media link
+            while (preg_match($resource_reg, $output, $matches)) {
+                // Simple copy for a file
+                $media_file = $upload_dir['basedir'] . $matches[2];
+                $this->copyToPageResource($post, $media_file);
+                $output = str_replace($matches[1], basename($media_file), $output);
+            }
+
             $this->write($output, $post);
         }
     }
@@ -336,9 +400,9 @@ class Hugo_Export
         $this->convert_options();
         $this->convert_posts();
         $this->convert_uploads();
-        $this->zip();
-        $this->send();
         if (!WP_DEBUG) {
+            $this->zip();
+            $this->send();
             $this->cleanup();
         }
     }
@@ -396,7 +460,8 @@ class Hugo_Export
             $wp_filesystem->mkdir(urldecode($this->dir . $post->post_name));
             $filename = urldecode($post->post_name . '/index.md');
         } else {
-            $filename = $this->post_folder . date('Y-m-d', strtotime($post->post_date)) . '-' . urldecode($post->post_name) . '.md';
+            $this->mkdir($this->dir . $post->output_folder);
+            $filename = $post->output_folder . '/index.md';
         }
 
         $wp_filesystem->put_contents($this->dir . $filename, $output);

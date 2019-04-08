@@ -84,6 +84,11 @@ class ConverterExtra extends Converter
         $this->isMarkdownable['iframe']['allow'] = 'optional';
         $this->isMarkdownable['iframe']['allowfullscreen'] = 'optional';
         $this->isMarkdownable['iframe']['frameborder'] = 'optional';
+        // for amazon iframe
+        $this->isMarkdownable['iframe']['style'] = 'optional';
+        $this->isMarkdownable['iframe']['scrolling'] = 'optional';
+        $this->isMarkdownable['iframe']['marginwidth'] = 'optional';
+        $this->isMarkdownable['iframe']['marginheight'] = 'optional';
         // footnotes
         $this->isMarkdownable['fnref'] = array(
             'target' => 'required',
@@ -173,8 +178,8 @@ class ConverterExtra extends Converter
 
         return $output;
     }
-	
-	/**
+
+    /**
      * handle <iframe> tags parsing
      *
      * @param void
